@@ -1,7 +1,7 @@
 ---
-title: "Título de tu presentación"
-subtitle: "⚔<br/>usando xaringan"
-author: "Tu nombre"
+title: "Paquete calidad"
+subtitle: "<br/>Instituto Nacional de Estadísticas"
+author: "Klaus Lehmann, Ricardo Pizarro e Ignacio Agloni"
 institute: "Latin R 2021"
 date: "10-12 de noviembre de 2021"
 output:
@@ -13,25 +13,141 @@ output:
       ratio: '16:9'
 ---
 
-# Header 1
+# ¿Qué quiere decir la calidad estadística?
 
-Agrega algo de texto aquí
+Las medias (y cualquier otro estadístico) obtenidas de una muestra son estimaciones de un parámetro poblacional
 
-## Header 2
+--
 
-Agrega algo de texto aquí
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align= "center", fig.height=4}
+library(ggplot2)
+library(tidyverse)
+values <- rnorm(100000, mean = 0, sd = 1)
+data <- data.frame(x = values)
 
-### Header 3
+ggplot(data, aes(x = x, fill = "coral")) +
+  geom_density() +
+  geom_vline(aes(xintercept = mean(x)), linetype = "dashed" ) +
+  geom_vline(xintercept = 1.96, linetype = "dashed", color = "red" ) +
+  geom_vline(xintercept = -1.96, linetype = "dashed", color = "red" ) +
+  theme(legend.position = "none",
+        axis.title = element_blank(),
+        axis.text = element_text(size = 14) 
+        )
 
-```{r}
-# Agrega tu código
-seq(1:5)
+
+
 ```
+
+Nuestra estimación se encuentra dentro de un intervalo, con cierta probabilidad
+
+---
+
+# Pensemos en 2 distribuciones distintas
+
+.pull-left[
+
+```{r,  fig.align= "center", fig.height=4, echo=FALSE}
+values1 <- rnorm(100000, mean = 0, sd = 10)
+ci_1 <- c(mean(values1) - 1.96 * sd(values1), mean(values1) + 1.96 * sd(values1))
+
+values2 <- rnorm(100000, mean = 0, sd = 4)
+ci_2 <- c(mean(values2) - 1.96 * sd(values2), mean(values2) + 1.96 * sd(values2))
+
+
+distributions <- bind_rows(bind_cols(values = values1, varianza = "alta varianza"),  bind_cols(values = values2, varianza = "baja varianza")) 
+
+distributions %>%
+  ggplot() + 
+  geom_density(aes(x = values, fill = varianza), alpha=0.5) +
+  labs(title = "Alta y baja varianza") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_blank(),
+        legend.text = element_text(size = 12),
+         axis.text = element_text(size = 14) 
+        )
+
+
+```
+]
+--
+
+.pull-right[
+
+```{r, fig.align= "center", echo=FALSE, fig.height=4 }
+df <- data.frame(estimacion = c("alta varianza", "alta varianza", "baja varianza", "baja varianza"), valor = c(ci_1, ci_2))
+
+
+ggplot(df, aes(x = as.factor(estimacion), y = valor)) +
+  geom_point() +
+  geom_segment(aes(x = estimacion , xend = estimacion, y = 0, yend = valor, colour = "segment")) +
+  coord_flip() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Intervalos de confianza") +
+  theme(legend.position = "none",
+        axis.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text = element_text(size = 14) 
+        
+        )
+
+```
+]
+
+--
+
+Intervalos de confianza demasiado amplios, no son informativos
+
+--
+
+Una estimación debe cumplir una cierta precisión (calidad) para que sea útil 
+
+---
+
+# Ejemplo de una estimación con baja precisión
+
+
+.pull-left[
+<img src="mafalda_miguelito.PNG" width="400" />
+
+]
+
+--
+
+.pull-right[
+<img src="miguelito.png" width="300" />
+
+]
+
+
+
+
+---
+# ¿Cómo medir la calidad de una estimación?
+
+- Tamaño de muestra
+- Tamaño de muestra efectivo
+- Grados de libertad
+- Error estándar
+- Coeficiente de variación (y logarítmico)
+- Conteo no ponderado
+- Error relativo
+ 
+--
+
+¿Y qué hago con todo esto?
+
+.center[
+<img src="https://media.giphy.com/media/a5viI92PAF89q/giphy.gif" width="200" />
+]
+
+
+
 ---
 
 class: chapter-slide
 
-# Capítulo nuevo
+# Paquete calidad
 
 ---
 
@@ -44,60 +160,18 @@ Veamos cómo lucen algunas gráficas con diversos tipos de dificultades visuales
 ```{r, echo=FALSE, message=FALSE}
 library(datos)
 library(ggplot2)
-library(colorblindr)
+#library(colorblindr)
 library(viridis)
 ```
 
 ---
 class: middle, center
 
-```{r,echo=FALSE,warning=FALSE,message=FALSE,fig.show="hold",out.width="50%",fig.alt= "Se muestran gráficas de densidad con los datos de la masa corporal de pinguinos de las especies Adelie, Chinstrap y Gentoo del conjunto de datos pinguinos del paquete en español datos, separados por color de acuerdo con la especie, usando la escala de color automática de ggplot2. En la columna izquierda se están utilizando los colores rosa, verde y azul. En la columna derecha se muestra la simulación de cómo se vería la gráfica de la izquierda considerando cuatro deficiencias visuales: Deutanomalía,Protanomalía, Tritanomalía y Desaturado."}
-fig <- ggplot(pinguinos, aes(masa_corporal_g, fill = especie)) + 
-  geom_density(alpha = 0.7) + 
-  theme_bw(base_size = 30) + 
-  theme(legend.position = c(0.8, 0.89),
-        legend.margin = margin(),
-        legend.title = element_blank()) 
-
-fig
-cvd_grid(ggplot(pinguinos, aes(masa_corporal_g, fill = especie)) + 
-           geom_density(alpha = 0.7) +  
-           theme_bw(base_size = 18) +
-           theme(legend.position = c(0.7, 0.85),
-                 legend.margin = margin(),
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = 12),
-                 legend.key.size = unit(8,'points')) 
-)
-
-```
 
 
 ---
 
 Ahora usemos colores más amigables con scale_fill_viridis()
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE,fig.show="hold",out.width="50%",fig.alt="Se muestran gráficas de densidad con los datos de la masa corporal de pinguinos de las especies Adelie, Chinstrap y Gentoo del conjunto de datos pinguinos del paquete en español datos separados por color de acuerdo con la especie, con ayuda de la escala viridis. En la columna izquierda se están utilizando los colores morado, esmeralda y amarillo. En la columna derecha se muestra la simulación de cómo se vería la gráfica de la izquierda considerando cuatro deficiencias visuales: Deutanomalía,Protanomalía, Tritanomalía y Desaturado."}
-fig2 <- ggplot(pinguinos, aes(masa_corporal_g, fill = especie)) + 
-  geom_density(alpha = 0.7) + 
-  theme_bw(base_size = 30) + 
-  theme(legend.position = c(0.8, 0.89),
-        legend.margin = margin(),
-        legend.title = element_blank()) +
-  scale_fill_viridis(discrete = TRUE)
-
-fig2
-cvd_grid(ggplot(pinguinos, aes(masa_corporal_g, fill = especie)) + 
-           geom_density(alpha = 0.7) +  
-           theme_bw(base_size = 18) +
-           theme(legend.position = c(0.7, 0.85),
-                 legend.margin = margin(),
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = 12),
-                 legend.key.size = unit(8,'points')) + 
-           scale_fill_viridis(discrete = TRUE) 
-)
-```
 
 ---
 
