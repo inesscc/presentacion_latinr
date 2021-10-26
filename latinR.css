@@ -46,6 +46,8 @@
   font-family: Sans-Serif;
 }
 
+
+
 .title-slide h2 {
   font-weight: normal;
   color: #000000;
@@ -68,10 +70,10 @@
 }
 
 .chapter-slide h1 {
-  position: absolute;
+  /* position: absolute; */
   top: 55%;
   left: 10%;
-  text-align: left;
+  /* text-align: left; */
   color: #ECECEC;
   font-size: 34pt;
   font-family: Sans-Serif;
@@ -111,4 +113,13 @@
   font-size: 20pt;
   font-family: Sans-Serif;
 
+}
+
+.remark-slide-content  h1 {
+  margin-top: 10px;
+}
+
+
+.remark-slide-content {
+  padding-top: 30px;
 }

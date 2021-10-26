@@ -13,7 +13,12 @@ output:
       ratio: '16:9'
 ---
 
-# ¿Qué quiere decir la calidad estadística?
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F)
+```
+
+
+# ¿Qué quiere decir calidad estadística?
 
 Las medias (y cualquier otro estadístico) obtenidas de una muestra son estimaciones de un parámetro poblacional
 
@@ -39,7 +44,6 @@ ggplot(data, aes(x = x, fill = "coral")) +
 
 ```
 
-Nuestra estimación se encuentra dentro de un intervalo, con cierta probabilidad
 
 ---
 
@@ -115,7 +119,7 @@ Una estimación debe cumplir una cierta precisión (calidad) para que sea útil
 --
 
 .pull-right[
-<img src="miguelito.png" width="300" />
+<img src="miguelito.png" width="250" />
 
 ]
 
@@ -133,50 +137,363 @@ Una estimación debe cumplir una cierta precisión (calidad) para que sea útil
 - Conteo no ponderado
 - Error relativo
  
+
+
+---
+
+# Estándares INE y CEPAL
+
+
+.pull-left[
+<img src="estandar_ine.png" width="500" />
+]
+
+
+.pull-right[
+<img src="estandar_cepal.png" width="300" />
+]
+
+<br>
+
 --
 
-¿Y qué hago con todo esto?
+.pull-left[
+**¿Y qué hago con todo esto?**
+]
+
+
+.pull-right[
+<img src="https://media.giphy.com/media/a5viI92PAF89q/giphy.gif" width="180" />
+]
+
+
+---
+
+class: chapter-slide, middle, center
+
+
+
+# Paquete calidad
+
+
+
+---
+
+# Mirada general
 
 .center[
-<img src="https://media.giphy.com/media/a5viI92PAF89q/giphy.gif" width="200" />
+<img src="ecuacion.png" width="550" />
+]
+
+--
+
+```{r, eval=F}
+devtools::install_github("inesscc/calidad")
+library(survey)
+```
+
+--
+
+**2 familias de funciones:**
+- create_
+- evaluate_
+
+
+---
+
+#Seteo inicial
+
+
+.center[
+<img src="logo_casen.png" width="400" />
 ]
 
 
 
----
+```{r, echo=F, warning=F, message=F}
+library(tidyverse)
+library(feather)
+library(readxl)
+library(survey)
 
-class: chapter-slide
+casen <- read_feather("data/Casen 2017.feather")
 
-# Paquete calidad
+casen <- casen %>% 
+  mutate(fdt = if_else(activ %in% c(1, 2), 1, 0, missing = 0), # fuerza de trabajo
+         ocupado = if_else(activ == 1, 1, 0, missing = 0), # persona ocupada
+         desocupado = if_else(activ == 2, 1, 0, missing = 0), # persona desocupada
+         metro = if_else(region == 13, 1, 0),
+         num = if_else(row_number() <= 1, 1, 0),
+         denom = 1) 
 
----
 
-## Crea algunas gráficas
+```
 
-Recomendamos usar el paquete [viridis](https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html) para crear gráficas amigables con las personas con daltonismo. 
 
-Veamos cómo lucen algunas gráficas con diversos tipos de dificultades visuales usando [colorblindr](https://github.com/clauswilke/colorblindr):
+--
 
-```{r, echo=FALSE, message=FALSE}
-library(datos)
-library(ggplot2)
-#library(colorblindr)
-library(viridis)
+
+```{r,  warning=F, message=F }
+library(survey)
+library(calidad)
+```
+
+
+--
+
+Declaramos el diseño complejo con la función `svydesign` de `survey`
+```{r}
+dc <- svydesign(weights = ~expr, ids = ~varunit, strata = ~varstrat, data = casen )
+
 ```
 
 ---
-class: middle, center
+
+# Funciones disponibles
+
+- `create_mean`: calcular la media (ingreso)
+- `create_prop`: calcular proporción o razón (ocupación) 
+- `create_total`: suma de variables continuas (ingreso) 
+- `create_size`: conteo de unidades (ocupación)  
+- `create_median`: calcular mediana (ingreso)
+
+--
+
+.center[
+ **Los nombres están alineados con la teoría** 🤓
+]
+
+
+---
+
+# Edad media por región: create_mean
+
+```{r}
+create_mean(var = edad, dominios = sexo, disenio = dc)
+
+```
+
+- grados de libertad
+- tamaño de muestra
+- coeficiente de variación
+
+---
+
+# Tipo de evaluación 
+
+No debemos usar virgulilla (cola de chancho)
+
+```{r, eval=F}
+svyby(formula = ~edad, by = ~sexo, design =  dc, FUN = svymean) 
+```
+
+
+--
+
+Tampoco se requiere que los argumentos estén escritos como *strings*
+
+--
+
+Sin embargo, existe la libertad para usar *strings*
+
+```{r, eval=F}
+create_mean(var = "edad", dominios = sexo,  disenio = dc)
+
+```
+
+
+---
+
+# Tasa de desempleo: create_prop 
+
+
+```{r, eval=F}
+create_prop(var = desocupado, dominios = sexo, disenio = dc)
+```
+
+--
+
+Pero el desempleo se calcula sobre una subpoblación específica (fuerza de trabajo)
+
+--
+
+Para ello, utilizamos el argumento `subpop`
+
+```{r, eval=F}
+create_prop(var = desocupado, dominios = sexo, subpop = fdt, disenio = dc)
+```
+
+--
+
+Es muy importante considerar que la variable **subpop debe ser dummy** 
+
+
+---
+
+# Conteo de desocupados por sexo: create_size
+
+
+```{r}
+create_size(var = desocupado, dominios = sexo, subpop = fdt, disenio = dc)
+
+```
+
+--
+
+.red[Se requiere que la variable a estimar sea dummy]
+
+```{r, error=T, eval=T}
+create_size(var = region, dominios = sexo, subpop = fdt, disenio = dc)
+
+```
+
+
+---
+class: chapter-slide, middle
+
+# Evaluamos la calidad de nuestras estimaciones
+
+
+---
+
+# Calidad de la media de edad
+
+
+```{r}
+est <- create_mean(var = edad, dominios = sexo, disenio = dc)
+evaluate_mean(est)
+
+```
+
+--
+
+- `eval_n`: indica si el tamaño muestral es sufciente
+- `eval_gl`: indica si los gl son suficientes
+- `eval_cv`: indica el tramo en el que está el cv
+- **`calidad`: evaluación final de la estimación** 
 
 
 
 ---
 
-Ahora usemos colores más amigables con scale_fill_viridis()
+# Calidad de la tasa de desempleo
+
+```{r}
+est <-  create_prop(var = desocupado, dominios = sexo, disenio = dc)
+evaluate_prop(est)
+
+```
+
+--
+
+**Por defecto, las funciones usan el estándar INE**
 
 ---
 
-# Alt-text
+# ¿Qué pasa si queremos considerar los criterios de CEPAL?
 
-Recuerda agregar texto alternativo a tus figuras, describiendo los elementos que contienen y el mensaje que deseas transmitir con ellas.
 
-Puedes usar la opción fig.alt del chunk de R para agregar el texto alternativo.
+```{r}
+est <- create_size(var = desocupado, dominios = region+sexo, disenio = dc, 
+                   unweighted = T, deff = T, ess = T)
+
+evaluate_size(est, scheme = "cepal") %>% 
+  select(region, sexo, total, n, gl, coef_var, unweighted, ess, tag) %>% 
+  slice(1:6)
+
+```
+
+
+---
+
+# ¿Y si necesito usar mis propios parámetros de calidad?
+
+
+```{r}
+est <- create_size(var = desocupado, dominios = region+sexo, disenio = dc,
+                   unweighted = T, deff = T, ess = T)
+
+evaluate_size(est, scheme = "cepal", unweighted = 70, ess = 180) %>% 
+  select(region, sexo, total, n, gl, coef_var, unweighted, ess, tag) %>% 
+  slice(1:6)
+
+```
+
+
+---
+
+# Utilización de loops
+
+Podemos generar un loop, agregando el parámetro `standard_eval = T`
+
+
+```{r}
+
+insumos <- data.frame()
+for (var in c("edad", "esc")) {
+  insumo <- create_mean(var = var, dominios = "sexo", disenio = dc,
+                        standard_eval = T, rm.na = T )  
+  insumos <- bind_rows(insumos, insumo)
+}
+
+
+
+```
+--
+
+Podemos hacer lo mismo, utilizando el paquete `purrr` (mucho más recomendado que un for)
+
+
+```{r}
+insumos <- map_df(c("edad", "esc"), ~create_mean(var = .x, dominios = "sexo",
+                                                   disenio = dc, standard_eval = T, rm.na = T ))
+
+```
+
+
+---
+
+
+# Desarrollo open source
+
+El paquete `calidad` es un desarrollo completamente *open source* 
+
+
+--
+
+En este [repositorio de github](https://github.com/inesscc/calidad) pueden proponer nuevos desarrollos
+
+--
+
+Pueden generar *issues* o nuevas ramas de desarrollo 
+
+--
+
+Si tienen propuestas de mejora o nuevos desarrollos, estaremos felices de revisarlo e incorporarlo al paquete  
+
+.center[
+### 😄😄😄😄😄
+]
+
+
+---
+
+# Nuestros contactos ✉
+
+- kilehmannm@ine.gob.cl
+- rapizarros@ine.gob.cl
+- ifaglonij@ine.gob.cl
+
+
+---
+class:  chapter-slide, middle
+
+
+.center[
+# Muchas gracias
+]
+
+
+
+
+
