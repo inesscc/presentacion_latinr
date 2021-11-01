@@ -1,6 +1,6 @@
 ---
 title: "Paquete calidad"
-subtitle: "<br/>Instituto Nacional de Estadísticas"
+subtitle: "<br/>Instituto Nacional de Estadísticas - Chile"
 author: "Klaus Lehmann, Ricardo Pizarro e Ignacio Agloni"
 institute: "Latin R 2021"
 date: "10-12 de noviembre de 2021"
@@ -11,10 +11,13 @@ output:
     lib_dir: libs
     nature:
       ratio: '16:9'
+      highlightLines: true
+      
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = F)
+hook_source <- knitr::knit_hooks$get('source')
 ```
 
 
@@ -268,9 +271,13 @@ dc <- svydesign(weights = ~expr, ids = ~varunit, strata = ~varstrat, data = case
 
 # Edad media por región: create_mean
 
-```{r}
+```{r, eval=F}
 create_mean(var = edad, dominios = sexo, disenio = dc)
+```
 
+```{r, echo=F}
+create_mean(var = edad, dominios = sexo, disenio = dc) %>% 
+  mutate_at(vars(mean, se, coef_var), ~round(., 3))
 ```
 
 - grados de libertad
@@ -333,10 +340,23 @@ Es muy importante considerar que la variable **subpop debe ser dummy**
 # Conteo de desocupados por sexo: create_size
 
 
-```{r}
+```{r, eval=F}
 create_size(var = desocupado, dominios = sexo, subpop = fdt, disenio = dc)
+```
+
+
+.center[
+
+
+```{r, echo=F}
+create_size(var = desocupado, dominios = sexo, subpop = fdt, disenio = dc) %>% 
+  mutate_at(vars(se, coef_var), ~round(., 3))
 
 ```
+
+
+]
+
 
 --
 
@@ -361,13 +381,13 @@ class: chapter-slide, middle
 
 ```{r}
 est <- create_mean(var = edad, dominios = sexo, disenio = dc)
-evaluate_mean(est)
+tabla_html(evaluate_mean(est)) #<<
 
 ```
 
 --
 
-- `eval_n`: indica si el tamaño muestral es sufciente
+- `eval_n`: indica si el tamaño muestral es suficiente
 - `eval_gl`: indica si los gl son suficientes
 - `eval_cv`: indica el tramo en el que está el cv
 - **`calidad`: evaluación final de la estimación** 
@@ -380,13 +400,15 @@ evaluate_mean(est)
 
 ```{r}
 est <-  create_prop(var = desocupado, dominios = sexo, disenio = dc)
-evaluate_prop(est)
+evaluate_prop(est) %>% 
+  select(-c("cuadratica", "se", "eval_cv")) %>% 
+  tabla_html() 
 
 ```
 
 --
 
-**Por defecto, las funciones usan el estándar INE**
+**Por defecto, las funciones usan el estándar de evaluación de calidad del INE**
 
 ---
 
@@ -395,12 +417,12 @@ evaluate_prop(est)
 
 ```{r}
 est <- create_size(var = desocupado, dominios = region+sexo, disenio = dc, 
-                   unweighted = T, deff = T, ess = T)
+                   unweighted = T, deff = T, ess = T)      #<<             
 
-evaluate_size(est, scheme = "cepal") %>% 
+evaluate_size(est, scheme = "cepal") %>% #<<
   select(region, sexo, total, n, gl, coef_var, unweighted, ess, tag) %>% 
-  slice(1:6)
-
+  slice(1:4) %>% 
+  tabla_html()
 ```
 
 
@@ -410,12 +432,10 @@ evaluate_size(est, scheme = "cepal") %>%
 
 
 ```{r}
-est <- create_size(var = desocupado, dominios = region+sexo, disenio = dc,
-                   unweighted = T, deff = T, ess = T)
-
-evaluate_size(est, scheme = "cepal", unweighted = 70, ess = 180) %>% 
+evaluate_size(est, scheme = "cepal", unweighted = 200, ess = 180) %>% #<<
   select(region, sexo, total, n, gl, coef_var, unweighted, ess, tag) %>% 
-  slice(1:6)
+  slice(1:4) %>% 
+  tabla_html()
 
 ```
 
@@ -456,11 +476,6 @@ insumos <- map_df(c("edad", "esc"), ~create_mean(var = .x, dominios = "sexo",
 
 # Desarrollo open source
 
-El paquete `calidad` es un desarrollo completamente *open source* 
-
-
---
-
 En este [repositorio de github](https://github.com/inesscc/calidad) pueden proponer nuevos desarrollos
 
 --
@@ -474,6 +489,19 @@ Si tienen propuestas de mejora o nuevos desarrollos, estaremos felices de revisa
 .center[
 ### 😄😄😄😄😄
 ]
+
+
+---
+
+# Bonus track: app shiny
+
+
+
+.center[
+<img src="shiny_shinyproxy_docker.png" width="550" />
+]
+
+
 
 
 ---

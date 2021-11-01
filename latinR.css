@@ -2,7 +2,7 @@
   background-image: url('./logo_ine.png'), linear-gradient(to bottom, white 90%, rgba(236, 236, 236) 100%); /* LatinR_LOGOS-21.png*/
   background-position: 2% 98%, center ;   /* 2% 98%*/
   background-size: 70px, cover ;
-  font-size: 24pt;
+  font-size: 20pt;
   color: #000000;
   font-family: Sans-Serif;
   background-size: 80px;
@@ -41,7 +41,7 @@
 .title-slide h1 {
   color: #000000;
   font-weight: bold;
-  font-size: 34pt;
+  font-size: 45pt; /* 34pt*/
   margin-top: 16%;
   font-family: Sans-Serif;
 }
