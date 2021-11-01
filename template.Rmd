@@ -493,7 +493,7 @@ Si tienen propuestas de mejora o nuevos desarrollos, estaremos felices de revisa
 
 ---
 
-# Bonus track: app shiny
+# Bonus track: shiny app
 
 
 
