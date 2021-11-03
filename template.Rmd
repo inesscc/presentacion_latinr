@@ -286,31 +286,6 @@ create_mean(var = edad, dominios = sexo, disenio = dc) %>%
 
 ---
 
-# Tipo de evaluación 
-
-No debemos usar virgulilla (cola de chancho)
-
-```{r, eval=F}
-svyby(formula = ~edad, by = ~sexo, design =  dc, FUN = svymean) 
-```
-
-
---
-
-Tampoco se requiere que los argumentos estén escritos como *strings*
-
---
-
-Sin embargo, existe la libertad para usar *strings*
-
-```{r, eval=F}
-create_mean(var = "edad", dominios = sexo,  disenio = dc)
-
-```
-
-
----
-
 # Tasa de desempleo: create_prop 
 
 
@@ -399,7 +374,7 @@ tabla_html(evaluate_mean(est)) #<<
 # Calidad de la tasa de desempleo
 
 ```{r}
-est <-  create_prop(var = desocupado, dominios = sexo, disenio = dc)
+est <-  create_prop(var = desocupado, dominios = sexo, subpop = fdt,  disenio = dc)
 evaluate_prop(est) %>% 
   select(-c("cuadratica", "se", "eval_cv")) %>% 
   tabla_html() 
@@ -416,7 +391,7 @@ evaluate_prop(est) %>%
 
 
 ```{r}
-est <- create_size(var = desocupado, dominios = region+sexo, disenio = dc, 
+est <- create_size(var = desocupado, dominios = region+sexo, subpop = fdt, disenio = dc, 
                    unweighted = T, deff = T, ess = T)      #<<             
 
 evaluate_size(est, scheme = "cepal") %>% #<<
@@ -457,16 +432,6 @@ for (var in c("edad", "esc")) {
 }
 
 
-
-```
---
-
-Podemos hacer lo mismo, utilizando el paquete `purrr` (mucho más recomendado que un for)
-
-
-```{r}
-insumos <- map_df(c("edad", "esc"), ~create_mean(var = .x, dominios = "sexo",
-                                                   disenio = dc, standard_eval = T, rm.na = T ))
 
 ```
 
